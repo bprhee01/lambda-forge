@@ -44,8 +44,9 @@ export function HomePage() {
         <div className="section-head">
           <h2>Your streak fuel</h2>
           <p>
-            Lesson first, then drills. Progress lives in this browser.{' '}
-            {questsDone}/{totalQuests()} quests · {progress.xp}/{xpMax} XP.
+            Lesson first, then drills. Progress saves in this browser and syncs
+            to Railway. {questsDone}/{totalQuests()} quests · {progress.xp}/
+            {xpMax} XP.
           </p>
           <div className="meter-line">
             <div className="xp-track">

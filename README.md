@@ -20,7 +20,9 @@ npm run build
 npm start
 ```
 
-Serves `dist/` on `PORT` (default `4173`). Deployed on Railway (`railway.toml`). Push to `main` to redeploy.
+Serves `dist/` on `PORT` (default `4173`). Progress is stored in Railway
+Postgres (`/api/progress/:playerId`) and cached in `localStorage`. Deployed on
+Railway (`railway.toml`). Push to `main` to redeploy.
 
 ## Note
 
