@@ -1,13 +1,6 @@
 # λforge
 
-A quest-based web app for learning **functional programming in Scala**, inspired by the chapter arc of *Functional Programming in Scala* (the “Red Book”) by Paul Chiusano and Rúnar Bjarnason.
-
-## What you get
-
-- Progressive **world map** (purity → HOFs → lists/trees → Option/Either → laziness → State → monoids/monads)
-- Challenge types: multiple choice, fill-the-blank, true/false, spot-the-impurity
-- XP, streak, and progress saved in `localStorage`
-- Original practice content — **not** a copy of the Manning book
+Quest-based web app for learning **functional programming in Scala**. Original lessons cover all 15 chapter-worlds in the arc of *Functional Programming in Scala* (the Red Book).
 
 ## Run locally
 
@@ -16,15 +9,15 @@ npm install
 npm run dev
 ```
 
-Then open the URL Vite prints (usually `http://localhost:5173`).
-
-## Build
+## Production
 
 ```bash
 npm run build
-npm run preview
+npm start
 ```
 
-## Note on the book
+Serves `dist/` on `PORT` (default `4173`). Deployed on Railway via `railway.toml`.
 
-Please use a legal copy of *Functional Programming in Scala* (Manning). λforge is an independent study aid and is not affiliated with Manning Publications.
+## Note
+
+Original teaching material — not a copy of the Manning book. Support the authors with a [legal copy](https://www.manning.com/books/functional-programming-in-scala-second-edition).
