@@ -2,6 +2,10 @@
 
 Quest-based web app for learning **functional programming in Scala**. Original lessons cover all 15 chapter-worlds in the arc of *Functional Programming in Scala* (the Red Book).
 
+## Live
+
+**https://lambda-forge-production.up.railway.app**
+
 ## Run locally
 
 ```bash
@@ -16,7 +20,7 @@ npm run build
 npm start
 ```
 
-Serves `dist/` on `PORT` (default `4173`). Deployed on Railway via `railway.toml`.
+Serves `dist/` on `PORT` (default `4173`). Deployed on Railway (`railway.toml`). Push to `main` to redeploy.
 
 ## Note
 
