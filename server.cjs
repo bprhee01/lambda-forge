@@ -74,7 +74,7 @@ function readBody(req) {
 }
 
 function isPlayerId(id) {
-  return typeof id === 'string' && /^[a-z][a-z0-9_-]{1,23}$/i.test(id.trim())
+  return typeof id === 'string' && id.trim().toLowerCase() === 'ben'
 }
 
 function normalizeProgress(input) {

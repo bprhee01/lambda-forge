@@ -4,7 +4,7 @@ import { worlds } from '../data/curriculum'
 
 const STORAGE_KEY = 'lambda-forge-progress-v2'
 const PLAYER_KEY = 'lambda-forge-player-name'
-const DEFAULT_PLAYER = 'ben'
+export const PLAYER_NAME = 'ben'
 
 const empty: ProgressState = {
   completedQuests: [],
@@ -12,14 +12,6 @@ const empty: ProgressState = {
   xp: 0,
   streak: 0,
   lastPlayedDate: null,
-}
-
-export function isPlayerName(name: string): boolean {
-  return /^[a-z][a-z0-9_-]{1,23}$/i.test(name.trim())
-}
-
-function normalizeName(name: string): string {
-  return name.trim().toLowerCase()
 }
 
 function todayKey(): string {
@@ -36,23 +28,16 @@ function load(): ProgressState {
   }
 }
 
-function getPlayerName(): string {
+function ensurePlayerName() {
   try {
-    const existing = localStorage.getItem(PLAYER_KEY)
-    if (existing && isPlayerName(existing)) return normalizeName(existing)
-    // Migrate away from old UUID save codes.
-    localStorage.setItem(PLAYER_KEY, DEFAULT_PLAYER)
-    return DEFAULT_PLAYER
+    localStorage.setItem(PLAYER_KEY, PLAYER_NAME)
   } catch {
-    return DEFAULT_PLAYER
+    // ignore
   }
+  return PLAYER_NAME
 }
 
-function setPlayerName(name: string) {
-  localStorage.setItem(PLAYER_KEY, normalizeName(name))
-}
-
-let playerName = typeof window !== 'undefined' ? getPlayerName() : DEFAULT_PLAYER
+let playerName = typeof window !== 'undefined' ? ensurePlayerName() : PLAYER_NAME
 let state = typeof window !== 'undefined' ? load() : empty
 let syncing = false
 let hydrated = false
@@ -79,6 +64,10 @@ function getSnapshot() {
 
 function getPlayerSnapshot() {
   return playerName
+}
+
+function getSyncingSnapshot() {
+  return syncing
 }
 
 function touchStreak(prev: ProgressState): ProgressState {
@@ -111,11 +100,10 @@ function mergeProgress(a: ProgressState, b: ProgressState): ProgressState {
 }
 
 async function pushRemote(next: ProgressState) {
-  if (!playerName) return
   try {
     syncing = true
     emit()
-    await fetch(`/api/progress/${encodeURIComponent(playerName)}`, {
+    await fetch(`/api/progress/${PLAYER_NAME}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(next),
@@ -136,8 +124,9 @@ function save(next: ProgressState) {
 async function hydrateFromServer() {
   if (hydrated) return
   hydrated = true
+  playerName = ensurePlayerName()
   try {
-    const res = await fetch(`/api/progress/${encodeURIComponent(playerName)}`)
+    const res = await fetch(`/api/progress/${PLAYER_NAME}`)
     if (!res.ok) return
     const remote = (await res.json()) as ProgressState
     const merged = mergeProgress(state, {
@@ -166,8 +155,9 @@ export function useProgress() {
   const currentPlayer = useSyncExternalStore(
     subscribe,
     getPlayerSnapshot,
-    () => playerName,
+    () => PLAYER_NAME,
   )
+  const isSyncing = useSyncExternalStore(subscribe, getSyncingSnapshot, () => false)
 
   useEffect(() => {
     void hydrateFromServer()
@@ -196,33 +186,6 @@ export function useProgress() {
     save(empty)
   }, [])
 
-  const switchPlayer = useCallback(async (name: string) => {
-    const nextName = normalizeName(name)
-    if (!isPlayerName(nextName)) {
-      throw new Error('Use a short name like ben (letters, numbers, _ or -).')
-    }
-    const res = await fetch(`/api/progress/${encodeURIComponent(nextName)}`)
-    if (!res.ok) throw new Error('Could not load that player.')
-    const remote = (await res.json()) as ProgressState
-    playerName = nextName
-    setPlayerName(nextName)
-    hydrated = true
-    const next = {
-      completedQuests: remote.completedQuests ?? [],
-      completedChallenges: remote.completedChallenges ?? [],
-      xp: remote.xp ?? 0,
-      streak: remote.streak ?? 0,
-      lastPlayedDate: remote.lastPlayedDate ?? null,
-    }
-    // If switching to a fresh name on this device, keep local only if empty remote
-    // and current local belongs to previous player — start from remote (usually empty).
-    saveLocal(next)
-    emit()
-    if (next.xp > 0 || next.completedQuests.length > 0) {
-      void pushRemote(next)
-    }
-  }, [])
-
   const isQuestComplete = useCallback(
     (questId: string) => progress.completedQuests.includes(questId),
     [progress.completedQuests],
@@ -247,11 +210,10 @@ export function useProgress() {
   return {
     progress,
     playerName: currentPlayer,
-    syncing,
+    syncing: isSyncing,
     completeChallenge,
     completeQuest,
     reset,
-    switchPlayer,
     isQuestComplete,
     isChallengeComplete,
     isWorldUnlocked,
