@@ -407,12 +407,43 @@ code,
   background: var(--patina);
 }
 
+.lesson-panel,
 .challenge-panel {
   display: grid;
   gap: 1.25rem;
   padding: 1.5rem 0;
   border-top: 1px solid var(--line);
   animation: slideIn 0.45s ease both;
+}
+
+.lesson-section {
+  display: grid;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+}
+
+.lesson-section h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.lesson-section p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 62ch;
+}
+
+.lesson-callout {
+  margin: 0.25rem 0 0;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--forge);
+  background: rgba(197, 107, 45, 0.08);
+  color: var(--ink);
+  line-height: 1.5;
+  max-width: 62ch;
 }
 
 .challenge-kind {

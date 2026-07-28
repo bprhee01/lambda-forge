@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Shell } from '../components/Shell'
-import { totalQuests, totalXpAvailable, worlds } from '../data/curriculum'
+import {
+  totalChapters,
+  totalQuests,
+  totalXpAvailable,
+  worlds,
+} from '../data/curriculum'
 import { useProgress } from '../hooks/useProgress'
 
 export function HomePage() {
@@ -14,9 +19,9 @@ export function HomePage() {
         </p>
         <h1>Temper pure functions. Master Scala FP.</h1>
         <p>
-          A quest-based training ground for functional programming in Scala —
-          purity, algebraic data, Option/Either, laziness, state, monoids, and
-          monads — inspired by the Red Book’s arc.
+          A complete, standalone path through functional programming in Scala —
+          all {totalChapters()} chapter-worlds with lessons you can learn from
+          even if you have never opened the Red Book.
         </p>
         <div className="cta-row">
           <Link to="/map" className="btn btn-primary">
@@ -28,7 +33,7 @@ export function HomePage() {
             target="_blank"
             rel="noreferrer"
           >
-            Get the book
+            Red Book (legal)
           </a>
         </div>
       </section>
@@ -37,8 +42,9 @@ export function HomePage() {
         <div className="section-head">
           <h2>Your anvil</h2>
           <p>
-            Progress saves in this browser. {questsDone}/{totalQuests()} quests
-            complete · {progress.xp}/{totalXpAvailable()} XP forged.
+            Each quest teaches first, then drills. Progress saves in this
+            browser. {questsDone}/{totalQuests()} quests · {progress.xp}/
+            {totalXpAvailable()} XP.
           </p>
         </div>
         <div className="cta-row">
@@ -55,15 +61,15 @@ export function HomePage() {
 
       <section className="section">
         <div className="section-head">
-          <h2>How it works</h2>
+          <h2>The full path</h2>
           <p>
-            Clear worlds in order. Each quest mixes multiple-choice, fill-in,
-            true/false, and “spot the impurity” challenges — no Scala runtime
-            required in the browser.
+            Purity → recursion → ADTs → Option/Either → laziness → State →
+            parallelism → property tests → parsers → monoids → monads →
+            applicative/traverse → IO → local effects → streaming.
           </p>
         </div>
         <div className="world-grid">
-          {worlds.slice(0, 3).map((w) => (
+          {worlds.map((w) => (
             <div key={w.id} className="world-row">
               <div className="world-index">
                 {String(w.chapter).padStart(2, '0')}
@@ -78,10 +84,10 @@ export function HomePage() {
       </section>
 
       <p className="footer-note">
-        λforge is an original practice app. It is not affiliated with Manning
-        Publications. Study alongside{' '}
-        <em>Functional Programming in Scala</em> by Paul Chiusano and Rúnar
-        Bjarnason — please support the authors via legal copies of the book.
+        λforge is original teaching material aligned to the chapter arc of{' '}
+        <em>Functional Programming in Scala</em> (Chiusano &amp; Bjarnason). It
+        is not affiliated with Manning Publications. When you want proofs and
+        deeper exercises, support the authors with a legal copy of the book.
       </p>
     </Shell>
   )

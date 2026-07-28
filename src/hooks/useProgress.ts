@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from 'react'
 import type { ProgressState } from '../types'
 import { worlds } from '../data/curriculum'
 
-const STORAGE_KEY = 'lambda-forge-progress-v1'
+const STORAGE_KEY = 'lambda-forge-progress-v2'
 
 const empty: ProgressState = {
   completedQuests: [],

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ChallengePlayer } from '../components/ChallengePlayer'
+import { LessonView } from '../components/LessonView'
 import { Shell } from '../components/Shell'
-import { getQuest } from '../data/curriculum'
+import { getQuest, worlds } from '../data/curriculum'
 import { useProgress } from '../hooks/useProgress'
-import { worlds } from '../data/curriculum'
+
+type Phase = 'lesson' | 'drill' | 'done'
 
 export function QuestPage() {
   const { worldId = '', questId = '' } = useParams()
@@ -20,12 +22,12 @@ export function QuestPage() {
   const worldIndex = worlds.findIndex((w) => w.id === worldId)
   const unlocked = worldIndex >= 0 && isWorldUnlocked(worldIndex)
 
+  const [phase, setPhase] = useState<Phase>('lesson')
   const [step, setStep] = useState(0)
-  const [finished, setFinished] = useState(false)
 
   useEffect(() => {
+    setPhase('lesson')
     setStep(0)
-    setFinished(false)
   }, [worldId, questId])
 
   const challenges = found?.quest.challenges ?? []
@@ -34,11 +36,12 @@ export function QuestPage() {
   const dots = useMemo(
     () =>
       challenges.map((c, i) => {
-        if (finished || isChallengeComplete(c.id) || i < step) return 'done'
-        if (i === step) return 'on'
+        if (phase === 'done' || isChallengeComplete(c.id) || (phase === 'drill' && i < step))
+          return 'done'
+        if (phase === 'drill' && i === step) return 'on'
         return ''
       }),
-    [challenges, finished, isChallengeComplete, step],
+    [challenges, phase, isChallengeComplete, step],
   )
 
   if (!found) {
@@ -59,10 +62,15 @@ export function QuestPage() {
   function handleContinue() {
     if (step >= challenges.length - 1) {
       completeQuest(quest.id, quest.xp)
-      setFinished(true)
+      setPhase('done')
       return
     }
     setStep((s) => s + 1)
+  }
+
+  function replay() {
+    setPhase('lesson')
+    setStep(0)
   }
 
   return (
@@ -74,14 +82,28 @@ export function QuestPage() {
           </div>
           <h1>{quest.title}</h1>
           <p>{quest.blurb}</p>
-          <div className="progress-track" aria-label="Challenge progress">
-            {dots.map((d, i) => (
-              <div key={i} className={`progress-dot ${d}`} />
-            ))}
-          </div>
+          {phase !== 'lesson' && (
+            <div className="progress-track" aria-label="Challenge progress">
+              {dots.map((d, i) => (
+                <div key={i} className={`progress-dot ${d}`} />
+              ))}
+            </div>
+          )}
+          {phase === 'lesson' && (
+            <p className="hint" style={{ margin: 0 }}>
+              Read the lesson, then temper what you learned in the drills.
+            </p>
+          )}
         </div>
 
-        {finished ? (
+        {phase === 'lesson' && (
+          <LessonView
+            lessons={quest.lessons}
+            onContinue={() => setPhase('drill')}
+          />
+        )}
+
+        {phase === 'done' && (
           <div className="complete-banner">
             <h2>Quest forged.</h2>
             <p>
@@ -92,28 +114,21 @@ export function QuestPage() {
               <Link to="/map" className="btn btn-primary">
                 Back to map
               </Link>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => {
-                  setStep(0)
-                  setFinished(false)
-                }}
-              >
+              <button type="button" className="btn btn-ghost" onClick={replay}>
                 Replay quest
               </button>
             </div>
           </div>
-        ) : (
-          challenge && (
-            <ChallengePlayer
-              key={challenge.id}
-              challenge={challenge}
-              onSolved={handleSolved}
-              onContinue={handleContinue}
-              isLast={step === challenges.length - 1}
-            />
-          )
+        )}
+
+        {phase === 'drill' && challenge && (
+          <ChallengePlayer
+            key={challenge.id}
+            challenge={challenge}
+            onSolved={handleSolved}
+            onContinue={handleContinue}
+            isLast={step === challenges.length - 1}
+          />
         )}
       </div>
     </Shell>

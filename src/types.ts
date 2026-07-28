@@ -4,6 +4,13 @@ export type ChallengeKind =
   | 'true-false'
   | 'spot-bug'
 
+export interface LessonSection {
+  heading?: string
+  body: string[]
+  code?: string
+  callout?: string
+}
+
 export interface ChallengeBase {
   id: string
   kind: ChallengeKind
@@ -50,6 +57,7 @@ export interface Quest {
   title: string
   blurb: string
   xp: number
+  lessons: LessonSection[]
   challenges: Challenge[]
 }
 
@@ -59,6 +67,7 @@ export interface World {
   title: string
   subtitle: string
   theme: string
+  overview: string
   quests: Quest[]
 }
 

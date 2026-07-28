@@ -12,8 +12,9 @@ export function MapPage() {
         <div className="section-head">
           <h2>World map</h2>
           <p>
-            Unlock the next chapter by finishing every quest in the current
-            world. Heat rises with each pure answer.
+            Fifteen chapter-worlds. Unlock the next by finishing every quest in
+            the current world. Open a quest to study the lesson, then run the
+            drills.
           </p>
         </div>
 
@@ -36,6 +37,9 @@ export function MapPage() {
                     <em style={{ fontStyle: 'normal', opacity: 0.85 }}>
                       {world.theme}
                     </em>
+                  </p>
+                  <p className="subtitle" style={{ marginTop: '0.35rem' }}>
+                    {world.overview}
                   </p>
                   {unlocked ? (
                     <div className="quest-links">
@@ -65,9 +69,9 @@ export function MapPage() {
       </section>
 
       <p className="footer-note">
-        Chapter numbers follow the spirit of the Red Book’s progression, with a
-        jump toward monoids & monads after state. Use the book for deep proofs
-        and full exercises; use λforge to drill intuition.
+        Lessons are written so you can learn the ideas without prior reading.
+        The Red Book remains the deeper companion for proofs and extended
+        exercises.
       </p>
     </Shell>
   )
