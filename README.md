@@ -21,7 +21,7 @@ npm start
 ```
 
 Serves `dist/` on `PORT` (default `4173`). Progress is stored in Railway
-Postgres for a single private profile (`ben`) and cached in `localStorage`.
+Postgres for private profiles (`ben`, `james`) and cached in `localStorage`.
 Deployed on Railway (`railway.toml`). Push to `main` to redeploy.
 
 ## Note

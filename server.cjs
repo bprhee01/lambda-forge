@@ -73,8 +73,10 @@ function readBody(req) {
   })
 }
 
+const ALLOWED_PLAYERS = new Set(['ben', 'james'])
+
 function isPlayerId(id) {
-  return typeof id === 'string' && id.trim().toLowerCase() === 'ben'
+  return typeof id === 'string' && ALLOWED_PLAYERS.has(id.trim().toLowerCase())
 }
 
 function normalizeProgress(input) {

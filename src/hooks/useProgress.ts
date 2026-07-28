@@ -4,7 +4,10 @@ import { worlds } from '../data/curriculum'
 
 const STORAGE_KEY = 'lambda-forge-progress-v2'
 const PLAYER_KEY = 'lambda-forge-player-name'
-export const PLAYER_NAME = 'ben'
+
+export const PLAYERS = ['ben', 'james'] as const
+export type PlayerName = (typeof PLAYERS)[number]
+export const DEFAULT_PLAYER: PlayerName = 'ben'
 
 const empty: ProgressState = {
   completedQuests: [],
@@ -12,6 +15,10 @@ const empty: ProgressState = {
   xp: 0,
   streak: 0,
   lastPlayedDate: null,
+}
+
+export function isAllowedPlayer(name: string): name is PlayerName {
+  return (PLAYERS as readonly string[]).includes(name.trim().toLowerCase())
 }
 
 function todayKey(): string {
@@ -28,19 +35,26 @@ function load(): ProgressState {
   }
 }
 
-function ensurePlayerName() {
+function readPlayer(): PlayerName {
   try {
-    localStorage.setItem(PLAYER_KEY, PLAYER_NAME)
+    const existing = localStorage.getItem(PLAYER_KEY)
+    if (existing && isAllowedPlayer(existing)) return existing.trim().toLowerCase() as PlayerName
+    localStorage.setItem(PLAYER_KEY, DEFAULT_PLAYER)
+    return DEFAULT_PLAYER
   } catch {
-    // ignore
+    return DEFAULT_PLAYER
   }
-  return PLAYER_NAME
 }
 
-let playerName = typeof window !== 'undefined' ? ensurePlayerName() : PLAYER_NAME
+function writePlayer(name: PlayerName) {
+  localStorage.setItem(PLAYER_KEY, name)
+}
+
+let playerName: PlayerName =
+  typeof window !== 'undefined' ? readPlayer() : DEFAULT_PLAYER
 let state = typeof window !== 'undefined' ? load() : empty
 let syncing = false
-let hydrated = false
+let hydratedFor: string | null = null
 const listeners = new Set<() => void>()
 
 function emit() {
@@ -103,7 +117,7 @@ async function pushRemote(next: ProgressState) {
   try {
     syncing = true
     emit()
-    await fetch(`/api/progress/${PLAYER_NAME}`, {
+    await fetch(`/api/progress/${playerName}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(next),
@@ -121,32 +135,43 @@ function save(next: ProgressState) {
   void pushRemote(next)
 }
 
-async function hydrateFromServer() {
-  if (hydrated) return
-  hydrated = true
-  playerName = ensurePlayerName()
+async function hydrateFromServer(force = false) {
+  if (!force && hydratedFor === playerName) return
+  hydratedFor = playerName
   try {
-    const res = await fetch(`/api/progress/${PLAYER_NAME}`)
+    const res = await fetch(`/api/progress/${playerName}`)
     if (!res.ok) return
     const remote = (await res.json()) as ProgressState
-    const merged = mergeProgress(state, {
+    const base = force ? empty : state
+    const merged = mergeProgress(base, {
       completedQuests: remote.completedQuests ?? [],
       completedChallenges: remote.completedChallenges ?? [],
       xp: remote.xp ?? 0,
       streak: remote.streak ?? 0,
       lastPlayedDate: remote.lastPlayedDate ?? null,
     })
-    saveLocal(merged)
+    // When switching players, prefer remote profile over previous player's local cache.
+    const next = force
+      ? {
+          completedQuests: remote.completedQuests ?? [],
+          completedChallenges: remote.completedChallenges ?? [],
+          xp: remote.xp ?? 0,
+          streak: remote.streak ?? 0,
+          lastPlayedDate: remote.lastPlayedDate ?? null,
+        }
+      : merged
+    saveLocal(next)
     if (
-      merged.xp !== remote.xp ||
-      merged.completedQuests.length !== (remote.completedQuests?.length ?? 0) ||
-      merged.completedChallenges.length !==
-        (remote.completedChallenges?.length ?? 0)
+      !force &&
+      (merged.xp !== remote.xp ||
+        merged.completedQuests.length !== (remote.completedQuests?.length ?? 0) ||
+        merged.completedChallenges.length !==
+          (remote.completedChallenges?.length ?? 0))
     ) {
       void pushRemote(merged)
     }
   } catch {
-    // Ignore — localStorage remains source of truth offline.
+    if (force) saveLocal(empty)
   }
 }
 
@@ -155,12 +180,12 @@ export function useProgress() {
   const currentPlayer = useSyncExternalStore(
     subscribe,
     getPlayerSnapshot,
-    () => PLAYER_NAME,
+    () => DEFAULT_PLAYER,
   )
   const isSyncing = useSyncExternalStore(subscribe, getSyncingSnapshot, () => false)
 
   useEffect(() => {
-    void hydrateFromServer()
+    void hydrateFromServer(false)
   }, [])
 
   const completeChallenge = useCallback((challengeId: string) => {
@@ -184,6 +209,18 @@ export function useProgress() {
 
   const reset = useCallback(() => {
     save(empty)
+  }, [])
+
+  const switchPlayer = useCallback(async (name: string) => {
+    if (!isAllowedPlayer(name)) {
+      throw new Error('Only ben or james can play.')
+    }
+    const next = name.trim().toLowerCase() as PlayerName
+    if (next === playerName) return
+    playerName = next
+    writePlayer(next)
+    emit()
+    await hydrateFromServer(true)
   }, [])
 
   const isQuestComplete = useCallback(
@@ -210,10 +247,12 @@ export function useProgress() {
   return {
     progress,
     playerName: currentPlayer,
+    players: PLAYERS,
     syncing: isSyncing,
     completeChallenge,
     completeQuest,
     reset,
+    switchPlayer,
     isQuestComplete,
     isChallengeComplete,
     isWorldUnlocked,

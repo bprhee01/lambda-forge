@@ -144,16 +144,39 @@ code,
   font-variant-numeric: tabular-nums;
 }
 
-.save-chip {
-  border: 1px solid var(--line);
-  background: rgba(247, 249, 251, 0.85);
-  color: var(--teal);
+.player-switch {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.15rem;
+  border-radius: 8px;
+  background: rgba(26, 35, 48, 0.06);
+}
+
+.player-chip {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
   font-weight: 700;
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 0.28rem 0.55rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.player-chip.on {
+  background: #fff;
+  color: var(--teal);
+}
+
+.player-chip:hover:not(:disabled):not(.on) {
+  color: var(--ink);
+}
+
+.player-chip:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .xp-track {

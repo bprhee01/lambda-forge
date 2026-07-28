@@ -4,7 +4,8 @@ import { totalXpAvailable } from '../data/curriculum'
 import type { ReactNode } from 'react'
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { progress, questsDone, playerName, syncing } = useProgress()
+  const { progress, questsDone, playerName, players, syncing, switchPlayer } =
+    useProgress()
   const xpMax = totalXpAvailable()
   const xpPct = Math.min(100, Math.round((progress.xp / Math.max(xpMax, 1)) * 100))
 
@@ -26,9 +27,19 @@ export function Shell({ children }: { children: ReactNode }) {
             <span>
               Streak <strong>{progress.streak}</strong>
             </span>
-            <span className="save-chip" title="Single private profile">
-              {syncing ? 'Syncing…' : playerName}
-            </span>
+            <div className="player-switch" role="group" aria-label="Player">
+              {players.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`player-chip ${playerName === name ? 'on' : ''}`}
+                  disabled={syncing}
+                  onClick={() => void switchPlayer(name)}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="xp-track" aria-label={`XP progress ${xpPct}%`}>
             <div className="xp-fill" style={{ width: `${xpPct}%` }} />
