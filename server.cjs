@@ -74,7 +74,7 @@ function readBody(req) {
 }
 
 function isPlayerId(id) {
-  return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+  return typeof id === 'string' && /^[a-z][a-z0-9_-]{1,23}$/i.test(id.trim())
 }
 
 function normalizeProgress(input) {
@@ -118,9 +118,9 @@ async function handleApi(req, res, urlPath) {
     return sendJson(res, 404, { error: 'not found' })
   }
 
-  const playerId = decodeURIComponent(match[1])
+  const playerId = decodeURIComponent(match[1]).trim().toLowerCase()
   if (!isPlayerId(playerId)) {
-    return sendJson(res, 400, { error: 'invalid player id' })
+    return sendJson(res, 400, { error: 'invalid player name' })
   }
 
   if (!pool) {

@@ -3,7 +3,8 @@ import type { ProgressState } from '../types'
 import { worlds } from '../data/curriculum'
 
 const STORAGE_KEY = 'lambda-forge-progress-v2'
-const PLAYER_KEY = 'lambda-forge-player-id'
+const PLAYER_KEY = 'lambda-forge-player-name'
+const DEFAULT_PLAYER = 'ben'
 
 const empty: ProgressState = {
   completedQuests: [],
@@ -11,6 +12,14 @@ const empty: ProgressState = {
   xp: 0,
   streak: 0,
   lastPlayedDate: null,
+}
+
+export function isPlayerName(name: string): boolean {
+  return /^[a-z][a-z0-9_-]{1,23}$/i.test(name.trim())
+}
+
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase()
 }
 
 function todayKey(): string {
@@ -27,24 +36,23 @@ function load(): ProgressState {
   }
 }
 
-function getOrCreatePlayerId(): string {
+function getPlayerName(): string {
   try {
     const existing = localStorage.getItem(PLAYER_KEY)
-    if (existing) return existing
-    const id = crypto.randomUUID()
-    localStorage.setItem(PLAYER_KEY, id)
-    return id
+    if (existing && isPlayerName(existing)) return normalizeName(existing)
+    // Migrate away from old UUID save codes.
+    localStorage.setItem(PLAYER_KEY, DEFAULT_PLAYER)
+    return DEFAULT_PLAYER
   } catch {
-    return crypto.randomUUID()
+    return DEFAULT_PLAYER
   }
 }
 
-function setPlayerId(id: string) {
-  localStorage.setItem(PLAYER_KEY, id)
+function setPlayerName(name: string) {
+  localStorage.setItem(PLAYER_KEY, normalizeName(name))
 }
 
-let playerId =
-  typeof window !== 'undefined' ? getOrCreatePlayerId() : '00000000-0000-4000-8000-000000000000'
+let playerName = typeof window !== 'undefined' ? getPlayerName() : DEFAULT_PLAYER
 let state = typeof window !== 'undefined' ? load() : empty
 let syncing = false
 let hydrated = false
@@ -70,7 +78,7 @@ function getSnapshot() {
 }
 
 function getPlayerSnapshot() {
-  return playerId
+  return playerName
 }
 
 function touchStreak(prev: ProgressState): ProgressState {
@@ -103,11 +111,11 @@ function mergeProgress(a: ProgressState, b: ProgressState): ProgressState {
 }
 
 async function pushRemote(next: ProgressState) {
-  if (!playerId) return
+  if (!playerName) return
   try {
     syncing = true
     emit()
-    await fetch(`/api/progress/${playerId}`, {
+    await fetch(`/api/progress/${encodeURIComponent(playerName)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(next),
@@ -129,7 +137,7 @@ async function hydrateFromServer() {
   if (hydrated) return
   hydrated = true
   try {
-    const res = await fetch(`/api/progress/${playerId}`)
+    const res = await fetch(`/api/progress/${encodeURIComponent(playerName)}`)
     if (!res.ok) return
     const remote = (await res.json()) as ProgressState
     const merged = mergeProgress(state, {
@@ -140,7 +148,6 @@ async function hydrateFromServer() {
       lastPlayedDate: remote.lastPlayedDate ?? null,
     })
     saveLocal(merged)
-    // If local had extras, push merged back up.
     if (
       merged.xp !== remote.xp ||
       merged.completedQuests.length !== (remote.completedQuests?.length ?? 0) ||
@@ -156,10 +163,10 @@ async function hydrateFromServer() {
 
 export function useProgress() {
   const progress = useSyncExternalStore(subscribe, getSnapshot, () => empty)
-  const currentPlayerId = useSyncExternalStore(
+  const currentPlayer = useSyncExternalStore(
     subscribe,
     getPlayerSnapshot,
-    () => playerId,
+    () => playerName,
   )
 
   useEffect(() => {
@@ -189,20 +196,17 @@ export function useProgress() {
     save(empty)
   }, [])
 
-  const restorePlayer = useCallback(async (id: string) => {
-    const trimmed = id.trim()
-    if (
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        trimmed,
-      )
-    ) {
-      throw new Error('That does not look like a valid save code.')
+  const switchPlayer = useCallback(async (name: string) => {
+    const nextName = normalizeName(name)
+    if (!isPlayerName(nextName)) {
+      throw new Error('Use a short name like ben (letters, numbers, _ or -).')
     }
-    const res = await fetch(`/api/progress/${trimmed}`)
-    if (!res.ok) throw new Error('Could not load that save code.')
+    const res = await fetch(`/api/progress/${encodeURIComponent(nextName)}`)
+    if (!res.ok) throw new Error('Could not load that player.')
     const remote = (await res.json()) as ProgressState
-    playerId = trimmed
-    setPlayerId(trimmed)
+    playerName = nextName
+    setPlayerName(nextName)
+    hydrated = true
     const next = {
       completedQuests: remote.completedQuests ?? [],
       completedChallenges: remote.completedChallenges ?? [],
@@ -210,8 +214,13 @@ export function useProgress() {
       streak: remote.streak ?? 0,
       lastPlayedDate: remote.lastPlayedDate ?? null,
     }
+    // If switching to a fresh name on this device, keep local only if empty remote
+    // and current local belongs to previous player — start from remote (usually empty).
     saveLocal(next)
     emit()
+    if (next.xp > 0 || next.completedQuests.length > 0) {
+      void pushRemote(next)
+    }
   }, [])
 
   const isQuestComplete = useCallback(
@@ -237,12 +246,12 @@ export function useProgress() {
 
   return {
     progress,
-    playerId: currentPlayerId,
+    playerName: currentPlayer,
     syncing,
     completeChallenge,
     completeQuest,
     reset,
-    restorePlayer,
+    switchPlayer,
     isQuestComplete,
     isChallengeComplete,
     isWorldUnlocked,

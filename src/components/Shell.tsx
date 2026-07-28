@@ -4,34 +4,24 @@ import { totalXpAvailable } from '../data/curriculum'
 import { useState, type FormEvent, type ReactNode } from 'react'
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { progress, questsDone, playerId, syncing, restorePlayer } = useProgress()
+  const { progress, questsDone, playerName, syncing, switchPlayer } = useProgress()
   const xpMax = totalXpAvailable()
   const xpPct = Math.min(100, Math.round((progress.xp / Math.max(xpMax, 1)) * 100))
   const [open, setOpen] = useState(false)
-  const [restoreCode, setRestoreCode] = useState('')
+  const [nameInput, setNameInput] = useState(playerName)
   const [msg, setMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  async function copyCode() {
-    try {
-      await navigator.clipboard.writeText(playerId)
-      setMsg('Save code copied.')
-    } catch {
-      setMsg('Copy failed — select the code manually.')
-    }
-  }
-
-  async function onRestore(e: FormEvent) {
+  async function onSwitch(e: FormEvent) {
     e.preventDefault()
     setBusy(true)
     setMsg(null)
     try {
-      await restorePlayer(restoreCode)
-      setMsg('Progress restored from Railway.')
-      setRestoreCode('')
+      await switchPlayer(nameInput)
+      setMsg(`Synced as ${nameInput.trim().toLowerCase()}.`)
       setOpen(false)
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : 'Restore failed.')
+      setMsg(err instanceof Error ? err.message : 'Could not switch player.')
     } finally {
       setBusy(false)
     }
@@ -58,10 +48,13 @@ export function Shell({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="save-chip"
-              onClick={() => setOpen((v) => !v)}
-              title="Cloud save"
+              onClick={() => {
+                setNameInput(playerName)
+                setOpen((v) => !v)
+              }}
+              title="Player"
             >
-              {syncing ? 'Syncing…' : 'Save'}
+              {syncing ? 'Syncing…' : playerName}
             </button>
           </div>
           <div className="xp-track" aria-label={`XP progress ${xpPct}%`}>
@@ -73,26 +66,27 @@ export function Shell({ children }: { children: ReactNode }) {
       {open && (
         <div className="save-panel">
           <div className="save-panel-head">
-            <strong>Cloud save</strong>
-            <span>Progress syncs to Railway Postgres. Keep this code to continue on another device.</span>
+            <strong>Playing as {playerName}</strong>
+            <span>
+              Progress is saved on Railway under this name. On another device,
+              just use the same name.
+            </span>
           </div>
-          <div className="save-code-row">
-            <code className="save-code">{playerId}</code>
-            <button type="button" className="btn btn-ghost" onClick={copyCode}>
-              Copy
-            </button>
-          </div>
-          <form className="restore-row" onSubmit={onRestore}>
+          <form className="restore-row" onSubmit={onSwitch}>
             <input
-              value={restoreCode}
-              onChange={(e) => setRestoreCode(e.target.value)}
-              placeholder="Paste a save code to restore"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="ben"
               spellCheck={false}
               autoCapitalize="off"
               autoCorrect="off"
             />
-            <button type="submit" className="btn btn-forge" disabled={busy || !restoreCode.trim()}>
-              Restore
+            <button
+              type="submit"
+              className="btn btn-forge"
+              disabled={busy || !nameInput.trim()}
+            >
+              Use name
             </button>
           </form>
           {msg && <p className="save-msg">{msg}</p>}

@@ -21,8 +21,8 @@ npm start
 ```
 
 Serves `dist/` on `PORT` (default `4173`). Progress is stored in Railway
-Postgres (`/api/progress/:playerId`) and cached in `localStorage`. Deployed on
-Railway (`railway.toml`). Push to `main` to redeploy.
+Postgres under a simple player name (default `ben`) and cached in
+`localStorage`. Deployed on Railway (`railway.toml`). Push to `main` to redeploy.
 
 ## Note
 
