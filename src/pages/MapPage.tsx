@@ -12,33 +12,38 @@ export function MapPage() {
         <div className="section-head">
           <h2>World map</h2>
           <p>
-            Fifteen chapter-worlds. Unlock the next by finishing every quest in
-            the current world. Open a quest to study the lesson, then run the
-            drills.
+            Clear a world to unlock the next node. Tap a quest, read the lesson,
+            then run the drills for XP.
           </p>
         </div>
 
         <div className="world-grid">
           {worlds.map((world, index) => {
             const unlocked = isWorldUnlocked(index)
+            const allDone = world.quests.every((q) => isQuestComplete(q.id))
+            const isCurrent = unlocked && !allDone
             return (
               <article
                 key={world.id}
-                className={`world-row ${unlocked ? '' : 'locked'}`}
+                className={`world-row ${unlocked ? '' : 'locked'} ${
+                  isCurrent ? 'current' : ''
+                }`}
               >
-                <div className="world-index">
-                  {String(world.chapter).padStart(2, '0')}
+                <div className="world-rail">
+                  <div className="world-node">
+                    {String(world.chapter).padStart(2, '0')}
+                  </div>
                 </div>
                 <div className="world-body">
                   <h3>{world.title}</h3>
                   <p className="subtitle">
                     {world.subtitle}
                     <br />
-                    <em style={{ fontStyle: 'normal', opacity: 0.85 }}>
+                    <em style={{ fontStyle: 'normal', opacity: 0.88 }}>
                       {world.theme}
                     </em>
                   </p>
-                  <p className="subtitle" style={{ marginTop: '0.35rem' }}>
+                  <p className="subtitle" style={{ marginTop: '0.2rem' }}>
                     {world.overview}
                   </p>
                   {unlocked ? (
@@ -52,13 +57,13 @@ export function MapPage() {
                           }`}
                         >
                           {q.title}
-                          <span style={{ opacity: 0.6 }}> · {q.xp} XP</span>
+                          <span className="xp"> · {q.xp} XP</span>
                         </Link>
                       ))}
                     </div>
                   ) : (
                     <p className="lock-note">
-                      Locked — complete the previous world first.
+                      Locked — finish the previous world first.
                     </p>
                   )}
                 </div>
@@ -69,9 +74,8 @@ export function MapPage() {
       </section>
 
       <p className="footer-note">
-        Lessons are written so you can learn the ideas without prior reading.
-        The Red Book remains the deeper companion for proofs and extended
-        exercises.
+        Lessons stand alone. The Red Book is the deeper companion for proofs and
+        extended exercises.
       </p>
     </Shell>
   )

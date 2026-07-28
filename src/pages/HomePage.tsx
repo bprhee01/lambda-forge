@@ -10,6 +10,8 @@ import { useProgress } from '../hooks/useProgress'
 
 export function HomePage() {
   const { progress, questsDone, reset } = useProgress()
+  const xpMax = totalXpAvailable()
+  const xpPct = Math.min(100, Math.round((progress.xp / Math.max(xpMax, 1)) * 100))
 
   return (
     <Shell>
@@ -19,9 +21,9 @@ export function HomePage() {
         </p>
         <h1>Temper pure functions. Master Scala FP.</h1>
         <p>
-          A complete, standalone path through functional programming in Scala —
-          all {totalChapters()} chapter-worlds with lessons you can learn from
-          even if you have never opened the Red Book.
+          Short lessons, sticky drills, and a path that keeps unlocking —
+          {totalChapters()} worlds from purity to streaming, learnable without
+          the Red Book.
         </p>
         <div className="cta-row">
           <Link to="/map" className="btn btn-primary">
@@ -40,16 +42,21 @@ export function HomePage() {
 
       <section className="section">
         <div className="section-head">
-          <h2>Your anvil</h2>
+          <h2>Your streak fuel</h2>
           <p>
-            Each quest teaches first, then drills. Progress saves in this
-            browser. {questsDone}/{totalQuests()} quests · {progress.xp}/
-            {totalXpAvailable()} XP.
+            Lesson first, then drills. Progress lives in this browser.{' '}
+            {questsDone}/{totalQuests()} quests · {progress.xp}/{xpMax} XP.
           </p>
+          <div className="meter-line">
+            <div className="xp-track">
+              <div className="xp-fill" style={{ width: `${xpPct}%` }} />
+            </div>
+            <span className="meter-label">{xpPct}%</span>
+          </div>
         </div>
         <div className="cta-row">
           <Link to="/map" className="btn btn-forge">
-            Continue training
+            Keep going
           </Link>
           {questsDone > 0 && (
             <button type="button" className="btn btn-ghost" onClick={reset}>
@@ -61,18 +68,20 @@ export function HomePage() {
 
       <section className="section">
         <div className="section-head">
-          <h2>The full path</h2>
+          <h2>The trail</h2>
           <p>
             Purity → recursion → ADTs → Option/Either → laziness → State →
-            parallelism → property tests → parsers → monoids → monads →
-            applicative/traverse → IO → local effects → streaming.
+            parallelism → properties → parsers → monoids → monads →
+            applicative → IO → local effects → streaming.
           </p>
         </div>
         <div className="world-grid">
-          {worlds.map((w) => (
-            <div key={w.id} className="world-row">
-              <div className="world-index">
-                {String(w.chapter).padStart(2, '0')}
+          {worlds.slice(0, 4).map((w, i) => (
+            <div key={w.id} className={`world-row ${i === 0 ? 'current' : ''}`}>
+              <div className="world-rail">
+                <div className="world-node">
+                  {String(w.chapter).padStart(2, '0')}
+                </div>
               </div>
               <div className="world-body">
                 <h3>{w.title}</h3>
@@ -85,9 +94,9 @@ export function HomePage() {
 
       <p className="footer-note">
         λforge is original teaching material aligned to the chapter arc of{' '}
-        <em>Functional Programming in Scala</em> (Chiusano &amp; Bjarnason). It
-        is not affiliated with Manning Publications. When you want proofs and
-        deeper exercises, support the authors with a legal copy of the book.
+        <em>Functional Programming in Scala</em> (Chiusano &amp; Bjarnason). Not
+        affiliated with Manning — support the authors with a legal copy when you
+        go deeper.
       </p>
     </Shell>
   )
